@@ -1,0 +1,17 @@
+---
+- name: install node
+  ansible.builtin.apt:
+    name:
+    - nodejs
+    - npm
+    update_cache: yes
+
+- name: install bats
+  ansible.builtin.shell: >
+    npm install -g 
+    bats 
+    bats-assert 
+    bats-support@git+https://github.com/ztombol/bats-support.git#v0.2.0
+
+- name: run tests
+  ansible.builtin.shell: bats {{ test_options }} {{ test_path }}

@@ -1,0 +1,18 @@
+apiVersion: "acid.zalan.do/v1"
+kind: postgresql
+metadata:
+  name: todo-db
+spec:
+  teamId: todo
+  volume:
+    size: 1Gi
+    storageClass: longhorn
+  numberOfInstances: 3
+  users:
+    todo:
+    - superuser
+    - createdb
+  databases:
+    todo: todo
+  postgresql:
+    version: "14"

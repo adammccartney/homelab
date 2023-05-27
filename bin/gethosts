@@ -1,0 +1,95 @@
+#!/usr/bin/env python 
+
+# gethosts: query the homelab hosts file 
+import os
+import sys
+import subprocess
+import json
+
+def hosts(names: list[str], hfpath):
+    """Get the hosts we want""" 
+    # read the file at hfpath
+    # WARNING: need to make sure the lines do not contain any trailing whitespace
+    hfile = os.path.abspath(hfpath)
+    assert os.path.exists(hfile), "Error no hosts file found."
+    assert len(names) > 0, "Error, no host names defined"
+    if not hasattr(hosts, "_hosts"):
+        terms = "".join([f"-e {n} " for n in names])
+        cmd = "grep {0} {1}".format(terms, hfile)
+        hosts._hosts = subprocess.check_output(
+                cmd, shell=True).decode().strip()
+    return hosts._hosts.split('\n')
+
+class VM:
+    def __init__(self, name, ip, user):
+        self.name = name
+        self.ip = ip
+        self.user = user or None
+
+def readgroups(groups):
+    "Read the groups json file"
+    with open(groups) as f:
+        data = json.load(f)
+    return data
+
+
+def populate_groups(groups: dict):
+    """Take a dictionary of groups and populate them with data from newly made vm objects."""
+    new_groups = dict(groups)
+    for k in new_groups.keys():
+        machines = new_groups[k]["hosts"]
+        new_machines = {"hosts":{}}
+        for m in machines:
+            new_machines["hosts"][m] = {"ansible_host": "",
+                                        "ansible_user": ""}
+        new_groups[k] = new_machines
+    return new_groups
+
+
+def insert_vminfo(groups: dict, vms: list):
+    "Cycle through list of virtual machines and append to the groups dictionary"
+    new_groups = dict(groups)
+    group_keys = new_groups.keys()
+    for vm in vms:
+        vm_dict = {"ansible_host": vm.ip,
+                   "ansible_user": vm.user}
+        for k in group_keys:
+            if vm.name in new_groups[k]["hosts"].keys():
+                new_groups[k]["hosts"][vm.name] = vm_dict
+    return new_groups
+
+
+def mkvminfo(user, hostinfo):
+    "Creates objects based on hostinfo"
+    vms = []
+    for h in hostinfo:
+        ip, hostname = h.split(' ')
+        name = hostname.split('.')[0]
+        vm = VM(name, ip, user)
+        vms.append(vm)
+    return vms
+
+
+def getvmnames(groups):
+    "Get the names of host machines in groups"
+    vms = set()
+    for k in groups.keys():
+        for vm in groups[k]['hosts']:
+            vms.add(vm)
+    return vms
+
+if __name__ == '__main__':
+    #TODO: possible make this a cli with a bit more panash
+    if len(sys.argv) < 3:
+        print("Usage: gethosts <hosts> <groups.json> <username>")
+        exit()
+    hostconf = sys.argv[1]
+    groupsjson = sys.argv[2]
+    user = sys.argv[3]
+    groups = readgroups(groupsjson)
+    vmnames = getvmnames(groups)
+    hostinfo = hosts(list(vmnames), hostconf)
+    vm_hosts = mkvminfo(user, hostinfo)
+    new_groups = populate_groups(groups)
+    final_groups = insert_vminfo(new_groups, vm_hosts)
+    print(json.dumps(final_groups, indent=4, default=str))

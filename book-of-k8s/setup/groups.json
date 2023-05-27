@@ -1,0 +1,6 @@
+{
+    "vagrant": {"hosts": ["host01", "host02", "host03", "host04"]},
+    "remote":  {"hosts": ["host01", "host02", "host03", "host04"]},
+    "masters": {"hosts": ["host01", "host02", "host03"]},
+    "nodes": {"hosts": ["host04"]}
+}

@@ -1,0 +1,9 @@
+---
+- hosts: masters:nodes
+  become: yes
+
+  vars_files:
+    - group_vars/proxmox.yaml
+
+  roles:
+    - k8s

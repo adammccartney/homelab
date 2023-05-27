@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+
+# prep-env: prepare environment with certain variables
+import os
+from pathlib import Path
+
+__doc__ = "prep-env: prepares the environment by setting some variables"
+
+HOSTS_PATH = os.getenv('HOSTS') or Path(Path(__file__).parent).joinpath("hosts")
+
+class Host:
+
+    def __init__(self, ip, hostname):
+        self.ip = ip 
+        self.hostname = hostname
+
+def read_hosts():
+    """Read the hostnames in HOSTS_PATH file.
+    return a list of <ip hostname> tuples."""
+    hosts = []
+    with open(HOSTS_PATH) as f:
+        lines = f.readlines()
+        for l in lines:
+            ip, hostname = l.split(' ')
+            hosts.append(Host(ip, hostname))
+    return hosts
+
+def write_env(hosts):
+    """Use the hostname to establish an environment variable 
+    whose value is the ip address associated with that hostname."""
+
+    Path(".env").touch(exist_ok=True)
+    envf = Path(".env").resolve()
+    with open(envf, "a") as f:
+        for h in hosts:
+            hostname = h.hostname.strip('\n')
+            parts = hostname.split('.')
+            vm_name = parts[0]
+            f.write(f'export {vm_name}={h.ip}\n')
+
+if __name__ == '__main__':
+    hosts = read_hosts()
+    write_env(hosts)

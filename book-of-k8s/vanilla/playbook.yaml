@@ -1,0 +1,15 @@
+---
+- hosts: masters:nodes
+  become: yes
+
+  vars_files:
+    - group_vars/proxmox.yaml
+
+  vars:
+    k8s_install: false
+
+  roles:
+    - tools
+    - containerd
+    - crictl
+    - k8s

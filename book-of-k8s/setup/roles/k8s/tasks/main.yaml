@@ -1,0 +1,5 @@
+---
+- ansible.builtin.include_tasks: prep.yaml
+
+- ansible.builtin.include_tasks: install.yaml
+  when: k8s_install

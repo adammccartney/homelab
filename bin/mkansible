@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+# setup-local.sh: get ready to setup for ansible stuff
+
+INVENTORY=./inventory
+HOSTS=./inventory/hosts.yml
+
+setup_inventory () {
+
+    [[ -d $INVENTORY ]] || mkdir $INVENTORY
+    [[ -f $HOSTS ]] || touch $HOSTS
+}
+
+mkinventory () {
+    echo "---" > $HOSTS
+    gethosts $* | yq -P >> $HOSTS 
+}
+
+setup_inventory
+mkinventory $*
