@@ -1,0 +1,3 @@
+ns_fqdn: "{{ ns2_fqdn }}" 
+ns_hostname: "ns2"
+ns_ip: "{{ ns1_ip }}"

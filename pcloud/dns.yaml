@@ -1,0 +1,8 @@
+---
+- name: Configure a dns server using bind
+  hosts: nameservers 
+  gather_facts: no
+
+  roles:
+    - role: dns
+...

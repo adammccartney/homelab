@@ -1,0 +1,118 @@
+# dns/tasks/main.yaml
+# provision a vm with bind9 for use as a dns server 
+#
+# usage: refrence this role from top-level playbook
+---
+- name: Install Utils and basic apps
+  ansible.builtin.dnf:
+    name:
+      - dnf-utils
+      - dnf-plugins-core
+      - vim
+      - net-tools
+      - wget
+      - bind
+      - bind-utils
+      - firewalld
+      - python3-firewall
+    state: present
+
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ ns_fqdn }}"
+
+- name: Add nameservers to hosts file if it does not exist
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "{{ ns_ip }} {{ ns_fqdn }} {{ ns_hostname }}"
+
+- name: Verify hostname
+  ansible.builtin.command: hostname -f 
+  register: set_fqdn
+  failed_when: set_fqdn.stdout != "{{ ns_fqdn }}"
+
+- name: Add ipv4 options to named config file 
+  ansible.builtin.lineinfile:
+    path: /etc/sysconfig/named
+    line: 'OPTIONS="-4"'
+  when: ansible_hostname == 'ns1'
+
+
+- name: Replace default named config with template
+  ansible.builtin.template:
+    src: templates/named.conf.j2
+    dest: /etc/named.conf
+
+- name: Create primary zones file from template
+  ansible.builtin.template:
+    src: templates/zones.conf.local.j2
+    dest: /etc/named/zones.conf.local
+    owner: root
+    group: named
+
+- name: Create primary DNS config file from template
+  ansible.builtin.template:
+    src: templates/primary-zone.conf.j2
+    dest: "{{ primary_zone_file_path }}"
+    owner: root
+    group: named
+  when: ansible_hostname == 'ns1'
+
+- name: Create reverse DNS config on master 
+  ansible.builtin.template:
+    src: templates/primary-rev.conf.j2
+    dest: "{{ primary_rev_zone_file_path }}"
+    owner: root
+    group: named
+    mode: '0644'
+  when: ansible_hostname == 'ns1'
+
+- name: Check that config is ok!
+  ansible.builtin.command: named-checkconf
+  register: named_checkconf 
+  failed_when: named_checkconf.rc != 0 
+
+
+- name: Start named service 
+  ansible.builtin.service:
+    name: named
+    state: started 
+
+- name: Enable named service 
+  ansible.builtin.service:
+    name: named
+    enabled: yes
+
+- name: Set firewall rule to add DNS service to firewalld 
+  ansible.posix.firewalld:
+    service: dns
+    permanent: true
+    state: enabled
+
+- name: Reload service firewalld
+  ansible.builtin.service:
+    name: firewalld
+    state: reloaded
+
+- name: Restart service named 
+  ansible.builtin.service:
+    name: named
+    state: restarted
+
+- name: Check name-checkzone for primary zone config 
+  ansible.builtin.command: "named-checkzone {{ domain }} {{ primary_zone_file_path }}"
+  register: named_checkzone 
+  failed_when: named_checkzone.stdout_lines[1] != "OK"
+  when: ansible_hostname == 'ns1'
+
+- name: Check name-checkzone for primary reverse zone config 
+  ansible.builtin.command: "named-checkzone {{ in_addr_arpa }} {{ primary_rev_zone_file_path }}"
+  register: named_checkzone 
+  failed_when: named_checkzone.stdout_lines[1] != "OK"
+  when: ansible_hostname == 'ns1'
+
+
+
+
+
+

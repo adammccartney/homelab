@@ -1,0 +1,24 @@
+zone "{{ domain }}" {
+    {% if ansible_host == "ns1" %}
+    type master;
+    file "{{ zone_conf_file }}";        # zone file path
+    allow-transfer { {{ ns2_ip }}; };   # ns2 private IP address - secondary
+    {% else %}
+    type slave;
+    file "slaves/{{ zone_conf_file }}";        # zone file path
+    masters { {{ ns1_ip }}; };                 # ns1 IP address
+    {% endif %}
+};
+
+
+zone "{{ in_addr_arpa }}" {
+    {% if ansible_host == "ns1" %}
+    type master;
+    file "{{ rev_zone_conf_file }}";   # 192.168.1.0/24 subnet
+    allow-transfer { {{ ns2_ip }}; };  # ns2 private IP address - secondary
+    {% else %}
+    type slave;
+    file "slaves/{{ rev_zone_conf_file }}";   # 192.168.1.0/24 subnet
+    masters { {{ ns1_ip }}; };                # ns1 IP address - master DNS
+    {% endif %}
+};

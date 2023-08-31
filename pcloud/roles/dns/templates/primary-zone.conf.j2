@@ -1,0 +1,26 @@
+;
+; BIND data file for the local loopback interface
+;
+$TTL    604800
+@       IN      SOA     {{ ns1_fqdn }}. admin.{{ domain }}. (
+                              3         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+
+; NS records for name servers
+    IN      NS      {{ domain }}.
+    IN      NS      {{ domain }}.
+
+; A records for name servers
+{{ ns1_fqdn }}.          IN      A       {{ ns1_ip }}
+{{ ns2_fqdn }}.          IN      A       {{ ns2_ip }}
+
+; Mail handler or MX record for the domain hwdomain.io
+{{ domain }}.    IN     MX   10   mail.{{ domain }}.
+
+; A records for domain names
+{{ srv }}.               IN      A      {{ srv_ip }}
+mail.{{ domain }}.       IN      A      {{ mail_ip }}

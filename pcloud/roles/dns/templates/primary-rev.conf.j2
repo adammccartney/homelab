@@ -1,0 +1,21 @@
+;
+; BIND reverse data file for the local loopback interface
+;
+$TTL    604800
+@       IN      SOA     ns1.hwdomain.io. admin.hwdomain.io. (
+                              3         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+
+; name servers - NS records
+      IN      NS      {{ ns1_fqdn }}.
+      IN      NS      {{ ns2_fqdn }}.
+
+; PTR Records
+100   IN      PTR     {{ ns1_fqdn }}.     ; {{ ns1_ip }} 
+120   IN      PTR     {{ ns2_fqdn }}.     ; {{ ns2_ip }}
+50    IN      PTR     {{ domain }}.       ; {{ srv_ip }}
+15    IN      PTR     mail.{{ domain }}.  ; {{ mail_ip }}

@@ -1,0 +1,5 @@
+ns_fqdn: "{{ ns1_fqdn }}"
+ns_hostname: "ns1"
+ns_ip: "{{ ns1_ip }}"
+primary_zone_file_path: "/var/named/{{ zone_conf_file }}"
+primary_rev_zone_file_path: "/var/named/{{ rev_zone_conf_file }}"
