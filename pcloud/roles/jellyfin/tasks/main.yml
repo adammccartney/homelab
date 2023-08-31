@@ -1,0 +1,100 @@
+# jellyfin/tasks/main.yml
+# provision a vm with jellyfin server
+#
+# usage: call from top-level playbook
+---
+- name: Install Utils and basic apps
+  ansible.builtin.dnf:
+    name:
+      - dnf-utils
+      - dnf-plugins-core
+      - vim
+      - tar
+      - lsof
+      - net-tools
+      - wget
+      - tree
+    state: present
+
+      #- name: Add jellyfin user and group
+
+
+- name: Install powertools
+  command: dnf config-manager --enable crb
+
+- name: Check what rhel version we're running 
+  ansible.builtin.shell: /usr/bin/rpm -E %rhel
+  register: rhel_result
+  ignore_errors: true
+
+- name: Install epel and rpmfusion repos 
+  ansible.builtin.dnf:
+    name:
+      - "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ rhel_result.stdout }}.noarch.rpm"
+      - "https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-{{ rhel_result.stdout }}.noarch.rpm"
+      - "https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-{{ rhel_result.stdout }}.noarch.rpm"
+    state: present 
+    disable_gpg_check: true
+
+- name: Install ffmpeg version required by jellyfin
+  ansible.builtin.dnf:
+    name:
+      - ffmpeg-devel
+      - ffmpeg
+    state: present
+
+- name: Install the jellyfin-web & jellyfin-server rpm from a remote repo
+  ansible.builtin.dnf:
+    name:
+      - "https://repo.jellyfin.org/releases/server/centos/versions/stable/web/10.8.10/jellyfin-web-10.8.10-1.el7.noarch.rpm"
+      - "https://repo.jellyfin.org/releases/server/centos/stable/server/jellyfin-server-10.8.10-1.el7.x86_64.rpm"
+    state: present
+    disable_gpg_check: true
+
+- name: Remove symbolic link to jellyfin (SELinux will complain otherwise)
+  ansible.builtin.file:
+    name: "/usr/bin/jellyfin"
+    state: absent
+
+- name: Copy in replacement script for jellyfin service 
+  ansible.builtin.copy:
+    src: 'files/jellyfin'
+    dest: '/usr/bin/jellyfin'
+    owner: root 
+    group: root
+    mode: 0755
+
+- name: Enable jellyfin systemctl service
+  ansible.builtin.systemd:
+    name: jellyfin
+    enabled: true
+    masked: false
+
+- name: Just force systemd to reread configs (2.4 and above)
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Just force systemd to re-execute itself (2.8 and above)
+  ansible.builtin.systemd:
+    daemon_reexec: true
+
+- name: Media directory exists
+  ansible.builtin.file:
+    path: /mnt/media
+    state: directory
+    owner: root
+    group: jellyfin
+    mode: 0755
+
+- name: Mount media nfs share 
+  ansible.posix.mount:
+    src: 192.168.1.105:/mnt/stadion/media
+    path: /mnt/media
+    opts: rw
+    state: mounted
+    fstype: nfs
+
+#- name: Mount jellyfin data directory
+#
+#
+#- name: Start jellyfin service
