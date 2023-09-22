@@ -1,5 +1,7 @@
 .env
 
+./cka/infra/os/
+
 # Local .terraform directories
 **/.terraform/*
 
