@@ -1,0 +1,14 @@
+#cloud-config
+hostname: mu-nfs
+manage_etc_hosts: true
+fqdn: mu-nfs
+user: adam
+ssh_authorized_keys:
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOfmNANf0AkdphsofkyCihlFUaiKJMffGiicKs+mUkFJ adam.mccartney@tuwien.ac.at
+chpasswd:
+  expire: False
+users:
+  - default
+package_upgrade: true
+packages:
+  - nfs-kernel-server
