@@ -1,3 +1,8 @@
+# openstack
+clouds.yaml
+*rc.sh
+
+#pve
 .env
 env.sh
 
